@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ishchilar Ro'yxati | Boss</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 0; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow-y: auto; }
+
+        /* Video Fon */
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover;
+            filter: brightness(0.4);
+        }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: -1; }
+
+        .content { padding: 20px; max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+
+        .header-panel {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; background: rgba(255,255,255,0.05);
+            padding: 15px; border-radius: 15px; border-bottom: 2px solid #00f2ff;
+            backdrop-filter: blur(5px);
+        }
+
+        .otryad-info {
+            color: #00f2ff; font-weight: bold; background: rgba(0,0,0,0.5);
+            padding: 8px 15px; border-radius: 8px; margin-bottom: 20px;
+            display: inline-block; border-left: 3px solid #00f2ff;
+        }
+
+        /* Ishchi Kartochkasi */
+        .worker-card {
+            background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);
+            padding: 18px; margin-bottom: 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.3s;
+        }
+        .worker-card:hover { transform: translateX(5px); background: rgba(255, 255, 255, 0.12); }
+
+        .worker-info { display: flex; align-items: center; gap: 15px; }
+        .worker-icon { font-size: 35px; color: #00f2ff; opacity: 0.8; }
+        .worker-name { font-size: 17px; color: white; font-weight: 600; }
+        .worker-tabel { color: #aaa; font-size: 13px; }
+
+        .action-buttons { display: flex; gap: 10px; }
+        .btn {
+            padding: 10px 18px; border-radius: 10px; font-weight: bold;
+            font-size: 13px; text-decoration: none; transition: 0.3s;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        .btn-view { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .btn-view:hover { background: rgba(255,255,255,0.2); }
+
+        .btn-add { background: linear-gradient(45deg, #00f2ff, #00d2ff); color: #000; }
+        .btn-add:hover { box-shadow: 0 0 15px rgba(0,242,255,0.5); transform: scale(1.05); }
+
+        h2 { color: #00f2ff; margin: 0; text-shadow: 0 0 10px rgba(0,242,255,0.3); }
+        .no-workers { text-align: center; color: #fff; margin-top: 50px; background: rgba(0,0,0,0.5); padding: 30px; border-radius: 15px; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+    <video autoplay loop playsinline muted id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="content">
+        <div class="header-panel">
+            <a href="/bosspage/" style="color:white; text-decoration:none;"><i class="fas fa-arrow-left"></i> Orqaga</a>
+            <h2>Ishchilar</h2>
+        </div>
+
+        <div class="otryad-info">
+            <i class="fas fa-users"></i>
+            {% if boss.otryad %}{{ boss.otryad.nomi }}{% else %}Bo'lim tayinlanmagan{% endif %}
+        </div>
+
+        {% for w in workers %}
+        <div class="worker-card">
+            <div class="worker-info">
+                <i class="fas fa-user-circle worker-icon"></i>
+                <div>
+                    <div class="worker-name">{{ w.full_name }}</div>
+                    <div class="worker-tabel">Tabel: {{ w.tabel_raqami }}</div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <a href="/boss/worker-report/{{ w.id }}/" class="btn btn-view">
+                    <i class="fas fa-calendar-alt"></i> Jadval
+                </a>
+                <a href="/boss/add-report/{{ w.id }}/" class="btn btn-add">
+                    <i class="fas fa-plus"></i> Kiritish
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-workers">
+            <i class="fas fa-user-slash" style="font-size: 40px; margin-bottom: 10px; opacity: 0.5;"></i>
+            <p>Guruhda ishchilar topilmadi.</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

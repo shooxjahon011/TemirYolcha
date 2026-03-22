@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poyezdlar Nazorati | Boss Panel</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --neon-green: #00ff88;
+            --neon-blue: #00d9ff;
+            --dark-bg: #050505;
+            --glass: rgba(15, 20, 30, 0.85);
+            --border: rgba(0, 255, 136, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--dark-bg);
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* Fon video */
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover;
+            filter: brightness(0.2) contrast(1.1); pointer-events: none;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
+
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 30px; padding: 20px 0; border-bottom: 1px solid var(--border);
+        }
+
+        .btn-back {
+            color: var(--neon-blue); text-decoration: none; font-family: 'Orbitron';
+            font-size: 12px; display: flex; align-items: center; gap: 8px;
+            padding: 8px 15px; border: 1px solid var(--neon-blue); border-radius: 8px;
+            background: rgba(0, 217, 255, 0.05); transition: 0.3s;
+        }
+        .btn-back:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px var(--neon-blue); }
+
+        .title-glitch {
+            font-family: 'Orbitron'; font-size: 18px; letter-spacing: 2px;
+            color: var(--neon-green); text-transform: uppercase;
+        }
+
+        /* Ishchi kartochkalari */
+        .status-wrapper { display: flex; flex-direction: column; gap: 15px; }
+
+        .worker-card {
+            background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-left: 4px solid var(--neon-green);
+            padding: 15px 20px; border-radius: 15px; display: flex;
+            justify-content: space-between; align-items: center;
+            text-decoration: none; color: white; transition: 0.3s;
+        }
+
+        .worker-card:hover {
+            transform: translateX(5px); border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+        }
+
+        .profile-info { display: flex; align-items: center; gap: 15px; }
+
+        .avatar {
+            width: 55px; height: 55px; border-radius: 12px;
+            border: 2px solid var(--neon-green); object-fit: cover;
+        }
+
+        .info-text h3 { font-size: 18px; margin-bottom: 4px; }
+        .train-tag {
+            font-family: 'Orbitron'; font-size: 11px; color: var(--neon-blue);
+            background: rgba(0, 217, 255, 0.1); padding: 2px 8px; border-radius: 4px;
+        }
+
+        .status-side { text-align: right; }
+        .time { font-size: 11px; opacity: 0.6; font-family: 'Orbitron'; margin-bottom: 5px; display: block; }
+        .badge {
+            background: rgba(0, 255, 136, 0.1); color: var(--neon-green);
+            font-size: 10px; font-weight: bold; padding: 5px 10px;
+            border: 1px solid var(--neon-green); border-radius: 6px;
+        }
+
+        @media (max-width: 600px) {
+            .worker-card { padding: 12px; }
+            .avatar { width: 45px; height: 45px; }
+            .info-text h3 { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <video autoplay loop playsinline muted id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+
+    <div class="container">
+        <header class="page-header">
+            <a href="/bosspage/" class="btn-back"><i class="fas fa-chevron-left"></i> ORQAGA</a>
+            <h1 class="title-glitch">POYEZD <span>HOLATI</span></h1>
+            <div style="width: 80px;"></div> </header>
+
+        <div class="status-wrapper">
+            {% for task in vazifalar %}
+            <a href="{% url 'vagon_hisoboti' task.id %}" class="worker-card">
+                <div class="profile-info">
+                    {% if task.assigned_worker.image %}
+                        <img src="{{ task.assigned_worker.image.url }}" class="avatar">
+                    {% else %}
+                        <img src="{% static 'images/default_avatar.png' %}" class="avatar">
+                    {% endif %}
+
+                    <div class="info-text">
+                        <h3>{{ task.assigned_worker.full_name|default:task.assigned_worker.login }}</h3>
+                        <span class="train-tag"><i class="fas fa-train"></i> № {{ task.train_number }}</span>
+                    </div>
+                </div>
+
+                <div class="status-side">
+                    <span class="time">{{ task.received_at|date:"H:i | d.m" }}</span>
+                    <div class="badge"><i class="fas fa-check"></i> OK</div>
+                </div>
+            </a>
+            {% empty %}
+            <div style="text-align: center; padding: 40px; background: var(--glass); border-radius: 15px; border: 1px dashed var(--border);">
+                <p style="opacity: 0.5; font-family: 'Orbitron'; font-size: 12px;">TUGATILGAN ISHLAR MAVJUD EMAS</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>

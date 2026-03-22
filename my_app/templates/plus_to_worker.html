@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Biriktirish | {{ boss.otryad.nomi }}</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --neon: #00f2ff;
+            --bg: #050505;
+            --border: rgba(0, 242, 255, 0.3);
+            --pending: #f4d03f;
+            --confirmed: #2ecc71;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+        }
+
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            width: auto; height: auto; z-index: -10; transform: translate(-50%, -50%);
+            filter: brightness(0.15) contrast(120%); object-fit: cover; pointer-events: none;
+        }
+
+        .header {
+            padding: 15px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px);
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { padding: 20px; max-width: 500px; margin: 0 auto; position: relative; z-index: 10; }
+
+        .search-input {
+            width: 100%; background: rgba(255,255,255,0.1); border: 1px solid var(--border);
+            padding: 12px 15px 12px 45px; border-radius: 12px; color: #fff; font-size: 16px; outline: none;
+        }
+
+        .train-card {
+            background: rgba(20, 25, 40, 0.8); border-radius: 15px; padding: 18px; margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between;
+            align-items: center; transition: 0.2s; cursor: pointer;
+        }
+        .train-card:hover { border-color: var(--neon); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
+
+        .train-num { font-family: 'Orbitron'; font-size: 22px; color: var(--neon); }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
+            z-index: 2000; display: none; align-items: center; justify-content: center;
+        }
+        .modal-body {
+            width: 90%; max-width: 380px; background: #0a0f1d;
+            border: 1px solid var(--neon); border-radius: 20px; padding: 20px;
+        }
+
+        .worker-item {
+            background: rgba(255,255,255,0.05); padding: 12px; margin-bottom: 8px;
+            border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn-select {
+            background: var(--neon); color: #000; border: none; padding: 8px 15px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 12px;
+        }
+        .btn-busy { background: #333; color: #777; cursor: not-allowed; }
+
+        .empty-state { text-align: center; margin-top: 50px; color: #666; }
+    </style>
+</head>
+<body>
+    <video autoplay loop playsinline muted id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+
+    <div class="header">
+        <a href="/bosspage/" style="color: #fff;"><i class="fas fa-arrow-left"></i></a>
+        <div style="text-align: center;">
+            <p style="font-size: 10px; color: var(--neon); letter-spacing: 2px;">OTRYAD: {{ boss.otryad.nomi|upper }}</p>
+            <h2 style="font-family: 'Orbitron'; font-size: 14px;">Guruh: {{ boss.guruh.nomi }}</h2>
+        </div>
+        <div style="width: 20px;"></div>
+    </div>
+
+    <div class="container">
+        <div style="position: relative; margin-bottom: 20px;">
+            <i class="fas fa-search" style="position: absolute; left: 15px; top: 15px; color: var(--neon);"></i>
+            <input type="text" id="trainSearch" class="search-input" placeholder="Poyezd № qidirish..." oninput="filterTrains()">
+        </div>
+
+        <div id="trainList">
+            {% for train in trains %}
+            <div class="train-item" data-number="{{ train.train_number }}">
+
+                {# 1. BO'SH POYEZDLAR (Hali biriktirilmagan) #}
+                {% if not train.assigned_worker or train.assignment_status == 'free' %}
+                <div class="train-card" onclick="openModal('{{ train.train_number }}', '{{ train.id }}')">
+                    <div>
+                        <p class="train-num">№ {{ train.train_number }}</p>
+                        <p style="font-size: 12px; color: #888;">{{ train.vagon_count }} vagon | <span style="color: var(--neon)">BO'SH</span></p>
+                    </div>
+                    <i class="fas fa-user-plus" style="color: var(--neon); font-size: 20px;"></i>
+                </div>
+
+                {# 2. KUTILAYOTGANLAR #}
+                {% elif train.assignment_status == 'pending' %}
+                <div class="train-card" style="border-left: 4px solid var(--pending); opacity: 0.8;" onclick="statusAlert('Kutilmoqda', '{{ train.assigned_worker.full_name|default:train.assigned_worker.login }} javobini kuting', 'warning')">
+                    <div>
+                        <p class="train-num">№ {{ train.train_number }}</p>
+                        <p style="font-size: 11px; color: var(--pending);">KUTILMOQDA: {{ train.assigned_worker.full_name }}</p>
+                    </div>
+                    <i class="fas fa-clock" style="color: var(--pending);"></i>
+                </div>
+
+                {# 3. TASDIQLANGANLAR #}
+                {% elif train.assignment_status == 'confirmed' %}
+                <div class="train-card" style="border-left: 4px solid var(--confirmed); opacity: 0.9;" onclick="statusAlert('Ish jarayonida', 'Ushbu poyezd ustida {{ train.assigned_worker.full_name }} ishlamoqda', 'success')">
+                    <div>
+                        <p class="train-num">№ {{ train.train_number }}</p>
+                        <p style="font-size: 11px; color: var(--confirmed);">TASDIQLANGAN: {{ train.assigned_worker.full_name }}</p>
+                    </div>
+                    <i class="fas fa-check-circle" style="color: var(--confirmed);"></i>
+                </div>
+                {% endif %}
+
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fas fa-train" style="font-size: 40px; margin-bottom: 10px; opacity: 0.3;"></i>
+                <p>{{ boss.otryad.nomi }} otryadida hozircha poyezdlar yo'q</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="workerModal" class="modal-overlay" onclick="if(event.target == this) closeModal()">
+        <div class="modal-body">
+            <h3 id="m_title" style="color: var(--neon); font-family: 'Orbitron'; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; font-size: 16px;"></h3>
+            <div style="max-height: 350px; overflow-y: auto;">
+                {% for loc in active_locations %}
+                <div class="worker-item">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 14px; font-weight: bold;">{{ loc.user.full_name|default:loc.user.login }}</span>
+                        <small style="font-size: 10px; color: #888;">ID: {{ loc.user.login }}</small>
+                    </div>
+                    {% if loc.is_busy %}
+                        <button class="btn-select btn-busy" disabled>BAND</button>
+                    {% else %}
+                        <button class="btn-select" onclick="confirmAssign('{{ loc.user.full_name|default:loc.user.login }}', '{{ loc.user.id }}')">TANLASH</button>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 20px;">
+                    <p style="color: #666; font-size: 13px;">Hozirda hech bir xodim onlayn emas.</p>
+                </div>
+                {% endfor %}
+            </div>
+            <button onclick="closeModal()" style="width: 100%; margin-top: 15px; background: none; border: 1px solid #444; color: #888; padding: 8px; border-radius: 8px; cursor: pointer;">YOPISH</button>
+        </div>
+    </div>
+
+    <script>
+        let selId = null; let selNum = null;
+
+        function filterTrains() {
+            let val = document.getElementById('trainSearch').value.toLowerCase();
+            document.querySelectorAll('.train-item').forEach(el => {
+                let num = el.getAttribute('data-number');
+                el.style.display = num.toLowerCase().includes(val) ? "block" : "none";
+            });
+        }
+
+        function openModal(num, id) {
+            selId = id; selNum = num;
+            document.getElementById('m_title').innerText = "№" + num + " uchun xodim tanlang";
+            document.getElementById('workerModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('workerModal').style.display = 'none';
+        }
+
+        function confirmAssign(name, wId) {
+            Swal.fire({
+                title: 'TASDIQLASH',
+                text: `№${selNum} poyezdni ${name}ga biriktirasizmi?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'HA, BIRIKTIRISH',
+                cancelButtonText: 'BEKOR QILISH',
+                background: '#0a0f1d', color: '#fff', confirmButtonColor: '#00f2ff', cancelButtonColor: '#333'
+            }).then((r) => {
+                if (r.isConfirmed) {
+                    // Yo'naltirish URL manzili sizning urls.py dagi nomingizga mos bo'lishi kerak
+                    window.location.href = `/assign-train/${selId}/${wId}/`;
+                }
+            });
+        }
+
+        function statusAlert(t, m, i) {
+            Swal.fire({title: t, text: m, icon: i, background: '#0a0f1d', color: '#fff', confirmButtonColor: '#00f2ff'});
+        }
+    </script>
+</body>
+</html>

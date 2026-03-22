@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Panel | {{ display_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --accent-cyan: #00f2ff;
+            --boss-red: #ff3838;
+            --live-green: #00ff88;
+            --gold: #f4d03f;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-dark);
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover;
+            filter: brightness(0.15) contrast(1.1) saturate(1.2);
+        }
+
+        .overlay-grid {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* Header */
+        .header {
+            position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
+            z-index: 1000; border-bottom: 1px solid var(--glass-border);
+        }
+
+        .brand { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 3px; }
+        .brand span { color: var(--boss-red); text-shadow: 0 0 15px var(--boss-red); }
+
+        .user-info {
+            display: flex; align-items: center; gap: 15px;
+            background: var(--glass); padding: 5px 20px;
+            border-radius: 15px; border: 1px solid var(--glass-border);
+        }
+        .avatar { width: 38px; height: 38px; border-radius: 10px; border: 2px solid var(--accent-cyan); object-fit: cover; }
+
+        /* Main Container */
+        .container { padding: 50px 20px; max-width: 1000px; margin: 0 auto; }
+
+        .welcome-section { text-align: center; margin-bottom: 50px; }
+        .welcome-section h1 {
+            font-family: 'Orbitron', sans-serif; font-size: 38px; margin-bottom: 10px;
+            background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .dept-tag { color: var(--accent-cyan); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 14px; }
+
+        /* Menu Grid */
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+
+        .card {
+            background: var(--glass); backdrop-filter: blur(15px); border-radius: 25px;
+            padding: 40px 25px; text-decoration: none; color: white;
+            border: 1px solid var(--glass-border); transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            position: relative; overflow: hidden;
+        }
+
+        .card::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, var(--accent-cyan), transparent 70%);
+            opacity: 0; transition: 0.4s; z-index: -1;
+        }
+
+        .card:hover {
+            transform: translateY(-12px); border-color: var(--accent-cyan);
+            box-shadow: 0 20px 40px rgba(0, 242, 255, 0.15);
+        }
+        .card:hover::before { opacity: 0.1; }
+
+        .card i { font-size: 45px; color: var(--accent-cyan); filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.5)); }
+        .card span { font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        /* Specific Card Styles */
+        .live-track { border-left: 4px solid var(--live-green); }
+        .live-track:hover { border-color: var(--live-green); }
+        .live-track i { color: var(--live-green); filter: drop-shadow(0 0 10px var(--live-green)); }
+
+        .assign-track { border-left: 4px solid var(--gold); }
+        .assign-track i { color: var(--gold); filter: drop-shadow(0 0 10px var(--gold)); }
+
+        .danger-track { border-left: 4px solid var(--boss-red); }
+        .danger-track i { color: var(--boss-red); filter: drop-shadow(0 0 10px var(--boss-red)); }
+
+        .full-width { grid-column: span 2; background: rgba(255,255,255,0.05); }
+
+        .live-badge {
+            position: absolute; top: 15px; right: 20px; background: var(--live-green);
+            color: black; font-size: 10px; font-weight: 900; padding: 4px 12px; border-radius: 50px;
+            text-transform: uppercase; animation: pulse 2s infinite;
+        }
+
+        .logout-btn { border-color: #333; opacity: 0.7; }
+        .logout-btn:hover { border-color: white; opacity: 1; }
+        .logout-btn i { color: white; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 255, 136, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); } }
+
+        @media (max-width: 768px) {
+            .menu-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .header { padding: 15px 20px; }
+            .welcome-section h1 { font-size: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <video autoplay loop playsinline muted id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay-grid"></div>
+
+    <header class="header">
+        <div class="brand">Temir<span>Yo'l</span></div>
+        <div class="user-info">
+            <span style="font-weight: 700;">{{ display_name }}</span>
+            <img src="{{ avatar_url|default:'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }}" class="avatar">
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="welcome-section">
+            <h1>Xush Kelibsiz Janob {{ display_name }}</h1>
+            <span class="dept-tag"><i class="fas fa-shield-alt"></i> {{ guruh_nomi }} Otryadi</span>
+        </section>
+
+        <div class="menu-grid">
+            <a href="/active-workers/" class="card live-track">
+                <div class="live-badge">Online: {{ active_workers_count }}</div>
+                <i class="fa-solid fa-location-dot"></i>
+                <span>Ishchilarni Kuzatish</span>
+            </a>
+
+            <a href="/trains/" class="card">
+                <i class="fa-solid fa-list-check"></i>
+                <span>Poyezdlar Jadvali</span>
+            </a>
+
+            <a href="/plustoworker/" class="card assign-track">
+                <i class="fas fa-link"></i>
+                <span>Ishchilarni Biriktirish</span>
+            </a>
+
+            <a href="/Baxtsizhodisalar/" class="card danger-track">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Favqulodda Hodisalar</span>
+            </a>
+
+            <a href="/kunlik/" class="card full-width">
+                <i class="fas fa-chart-line"></i>
+                <span>Umumiy Ish Faoliyati Hisoboti</span>
+            </a>
+
+            <a href="/profile/" class="card">
+                <i class="fas fa-user-shield"></i>
+                <span>Shaxsiy Profil</span>
+            </a>
+            <a href="https://t.me/STAREVOID" class="card assign-track">
+                <i class="fa-solid fa-handshake-angle"></i>
+                <span>Xatolarimizni ko'rsating!</span>
+            </a>
+             <a href="/holat/" class="card">
+             <i class="fa-solid fa-train-subway"></i>
+                <span>Poezd holati</span>
+            </a>
+            <a href="/malumot/" class="card full-width">
+                <i class="fa-brands fa-asymmetrik"></i>
+                <span>Malumotni uzatish!</span>
+            </a>
+            <a href="/logout/" class="card logout-btn">
+                <i class="fas fa-power-off"></i>
+                <span>Tizimdan Chiqish</span>
+            </a>
+
+
+        </div>
+    </main>
+
+    <script>
+        // Effektlar uchun kichik script
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Audio effekti qo'shish mumkin
+            });
+        });
+    </script>
+</body>
+</html>

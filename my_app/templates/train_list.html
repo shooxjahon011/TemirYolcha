@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring | {{ boss.guruh.nomi }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #00c6ff;
+            --secondary-blue: #0072ff;
+            --dark-bg: #0b0e1e;
+            --neon-border: rgba(0, 198, 255, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        body {
+            background: radial-gradient(circle at center, #1a203c 0%, #0b0e1e 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Video fon sozlamalari */
+        #bg-video {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2; /* Hamma narsadan orqada */
+            transform: translate(-50%, -50%);
+            filter: brightness(15%) contrast(110%) blur(2px);
+            object-fit: cover;
+        }
+
+        /* Video ustidan qo'shimcha qora qatlam (Overlay) */
+        .video-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(11, 14, 30, 0.6);
+            z-index: -1;
+        }
+
+        .container-fluid { width: 100%; padding: 15px 25px; position: relative; z-index: 1; }
+
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--neon-border);
+            color: white; padding: 8px 18px; border-radius: 10px;
+            text-decoration: none; font-size: 13px; backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+        .btn-back:hover { background: var(--primary-blue); box-shadow: 0 0 15px var(--primary-blue); }
+
+        .guruh-badge {
+            background: rgba(0, 242, 255, 0.15); color: var(--primary-blue);
+            padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 12px;
+            border: 1px solid var(--neon-border);
+        }
+
+        .glass-panel {
+            background: rgba(15, 20, 35, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+        }
+
+        .table-responsive { overflow-x: auto; border-radius: 12px; }
+        .train-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 1500px; text-align: center; }
+
+        .train-table th {
+            padding: 12px 5px; background: rgba(26, 32, 44, 0.9); color: #a0aec0;
+            text-transform: uppercase; font-size: 10px; font-weight: 700;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .train-table td {
+            padding: 10px 5px; border: 1px solid rgba(255,255,255,0.03);
+            font-family: 'Consolas', monospace;
+        }
+
+        .train-table tr:hover td { background: rgba(0, 198, 255, 0.12); cursor: pointer; }
+
+        .col-path { color: #f6e05e; font-weight: bold; }
+        .col-train { color: #63b3ed; font-weight: bold; }
+        .col-weight { color: #68d391; }
+
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+        .status-waiting { background: #744210; color: #fbd38d; }
+        .status-done { background: #22543d; color: #9ae6b4; }
+
+        /* Modal */
+        .modal {
+            display: none; position: fixed; inset: 0; z-index: 999;
+            background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(15px);
+        }
+        .modal-content {
+            background: #0f172a; margin: 8% auto; padding: 25px;
+            border: 2px solid var(--primary-blue); width: 70%; border-radius: 15px;
+            color: white;
+        }
+        .wagon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 15px; }
+        .wagon-card { background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body>
+
+<video autoplay muted loop playsinline id="bg-video">
+    <source src="{{ video_url }}" type="video/mp4">
+</video>
+<div class="video-overlay"></div>
+
+<div class="container-fluid">
+    <div class="nav-bar">
+        <a href='/bosspage/' class="btn-back"><i class="fas fa-arrow-left"></i> ORQAGA</a>
+        <div class="guruh-info">
+            <span class="guruh-badge">{{ boss.guruh.nomi|upper }} GURUHI MONITORINGI</span>
+        </div>
+    </div>
+
+    <div class="glass-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4 style="letter-spacing: 1px;"><i class="fas fa-desktop" style="color: var(--primary-blue)"></i> АСУ Станции САРЫАГАШ</h4>
+            <div id="live-clock" style="font-family: monospace; color: var(--primary-blue); font-size: 18px; font-weight: bold;"></div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="train-table">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>Путь</th>
+                        <th>Операция</th>
+                        <th>Поезд</th>
+                        <th>Форм</th>
+                        <th>Сост</th>
+                        <th>Назн</th>
+                        <th>СостНЛП</th>
+                        <th>Дата опер.</th>
+                        <th>Время</th>
+                        <th>Тип</th>
+                        <th>Ваг</th>
+                        <th>УДЛ</th>
+                        <th>Вес</th>
+                        <th>Охр</th>
+                        <th>Лок</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for train in trains %}
+                    <tr onclick="showWagons('{{ train.train_number }}', '{{ train.vagon_count }}', [{% for v in train.wagons.all %}'{{ v.vagon_number }}',{% endfor %}])">
+                        <td>{{ forloop.counter }}</td>
+                        <td class="col-path">{{ train.track_number|default:"--" }}</td>
+                        <td style="color: #ed8936;">{{ train.operation|default:"--" }}</td>
+                        <td class="col-train">{{ train.train_number }}</td>
+                        <td>{{ train.form_code|default:"0000" }}</td>
+                        <td>{{ train.sostav_code|default:"000" }}</td>
+                        <td>{{ train.nazn_code|default:"0000" }}</td>
+                        <td>{{ train.nlp_code|default:"ЗАВ" }}</td>
+                        <td>{{ train.received_at|date:"d.m.Y" }}</td>
+                        <td>{{ train.received_at|date:"H:i" }}</td>
+                        <td>{{ train.type_code|default:"ПСС" }}</td>
+                        <td style="font-weight: bold;">{{ train.vagon_count }}</td>
+                        <td>{{ train.udl_code|default:"0" }}</td>
+                        <td class="col-weight">{{ train.total_weight }}</td>
+                        <td>{{ train.oxr_code|default:"1" }}</td>
+                        <td>{{ train.lok_code|default:"1" }}</td>
+                        <td>
+                            {% if train.is_processed %}
+                            <span class="status-badge status-done">ГОТОВ</span>
+                            {% else %}
+                            <span class="status-badge status-waiting">В РАБОТЕ</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="17" style="padding: 100px; opacity: 0.5; font-size: 14px;">Ma'lumotlar topilmadi.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="wagonModal" class="modal">
+    <div class="modal-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <h3 id="modalTitle" style="color: var(--primary-blue)"></h3>
+            <span onclick="closeModal()" style="cursor: pointer; font-size: 30px; color: #f87171;">&times;</span>
+        </div>
+        <div id="wagonContainer" class="wagon-grid"></div>
+    </div>
+</div>
+
+<script>
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('live-clock').innerText = now.toLocaleTimeString('uz-UZ');
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    function showWagons(trainNum, count, wagons) {
+        document.getElementById('modalTitle').innerText = "Poyezd №" + trainNum + " (" + count + " vagon)";
+        const container = document.getElementById('wagonContainer');
+        container.innerHTML = '';
+        if(wagons.length === 0) {
+            container.innerHTML = "<p style='grid-column: 1/-1; text-align: center; padding: 20px;'>Vagonlar ro'yxati bo'sh</p>";
+        } else {
+            wagons.forEach(num => {
+                container.innerHTML += `<div class="wagon-card"><small style="color: #a0aec0">Вагон</small><br><b style="font-size: 14px;">${num}</b></div>`;
+            });
+        }
+        document.getElementById('wagonModal').style.display = 'block';
+    }
+
+    function closeModal() { document.getElementById('wagonModal').style.display = 'none'; }
+    window.onclick = function(e) { if(e.target.className === 'modal') closeModal(); }
+</script>
+</body>
+</html>

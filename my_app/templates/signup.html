@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ro'yxatdan o'tish | TemirYo'l</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0; background-color: #000;
+            min-height: 100vh; display: flex; justify-content: center; align-items: center;
+            font-family: 'Segoe UI', sans-serif; overflow-x: hidden;
+        }
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover; filter: brightness(0.5);
+        }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45); z-index: -1; }
+
+        .container {
+            position: relative; z-index: 2; background: rgba(0, 0, 0, 0.65);
+            padding: 30px; border-radius: 35px; width: 95%; max-width: 420px;
+            border: 1px solid rgba(0, 242, 255, 0.3); backdrop-filter: blur(15px);
+            text-align: center; color: white; margin: 40px 0;
+        }
+        h2 { font-weight: 800; color: #fff; text-transform: uppercase; text-shadow: 0 0 10px var(--neon); margin-bottom: 20px; }
+
+        input, select {
+            width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.95);
+            color: #000; font-size: 15px; font-weight: 600; outline: none;
+        }
+
+        .oklad-info {
+            background: rgba(0, 242, 255, 0.1); padding: 15px;
+            border: 1px solid #00f2ff; border-radius: 12px; margin: 15px 0;
+            color: #00f2ff; font-weight: 900; font-size: 18px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn {
+            width: 100%; padding: 16px; border-radius: 14px; border: none;
+            background: #00f2ff; color: #000; font-weight: 900; cursor: pointer;
+            text-transform: uppercase; transition: 0.3s;
+        }
+        .btn:hover { transform: scale(1.02); box-shadow: 0 0 15px #00f2ff; }
+
+        label { display: block; text-align: left; font-size: 11px; color: #00f2ff; margin: 8px 0 2px 10px; font-weight: bold; }
+        .error-msg { background: rgba(255,0,0,0.2); color: #ff4747; padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; border: 1px solid red; }
+    </style>
+</head>
+<body>
+    <video loop playsinline muted id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <h2><i class="fas fa-user-plus"></i> Ro'yxatdan o'tish</h2>
+
+        {% if error %}
+            <div class="error-msg">❌ {{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="text" name="full_name" placeholder="Ism-familiya" required>
+            <input type="text" name="u_name" placeholder="Login yarating" required>
+            <input type="password" name="p_val" placeholder="Parol yarating" required>
+            <input type="text" name="t_raqam" placeholder="Tabel raqami" required>
+            <input type="text" name="tel_val" placeholder="Telefon (+998...)" required>
+
+            <label>Otryadni tanlang:</label>
+            <select id="otryad_select" name="otryad_id" onchange="updateGroups()" required>
+                <option value="" disabled selected>Ro'yxatdan tanlang</option>
+                {% for o in otryadlar %}
+                    <option value="{{ o.id }}">{{ o.nomi }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Guruhni tanlang:</label>
+            <select id="guruh_select" name="guruh_id" disabled required>
+                <option value="" disabled selected>Avval otryadni tanlang</option>
+            </select>
+
+            <label>Razryad:</label>
+            <input type="text" id="razryad" name="razryad" placeholder="Masalan: 5/3" oninput="calc()" required>
+
+            <div class="oklad-info">
+                <span style="font-size: 11px; opacity: 0.8;">TARIF STAVKA:</span>
+                <span id="res">0 so'm</span>
+            </div>
+
+            <button type="submit" class="btn">HISOB YARATISH</button>
+        </form>
+
+        <p style="margin-top: 20px; font-size: 14px;">
+            Profilingiz bormi? <a href="/login/" style="color: #00f2ff; text-decoration: none; font-weight: 900;">KIRISH</a>
+        </p>
+    </div>
+
+    <script>
+        const guruhlarData = {{ guruhlar_json|safe }};
+
+        function updateGroups() {
+            const otryadId = document.getElementById('otryad_select').value;
+            const guruhSelect = document.getElementById('guruh_select');
+            guruhSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang</option>';
+
+            if (otryadId && guruhlarData[otryadId]) {
+                guruhSelect.disabled = false;
+                guruhlarData[otryadId].forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = g.nomi;
+                    guruhSelect.appendChild(opt);
+                });
+            } else {
+                guruhSelect.disabled = true;
+            }
+        }
+
+        function calc() {
+            const val = document.getElementById('razryad').value;
+            const res = document.getElementById('res');
+            const prices = {"5/3": 5336929, "5/2": 4800000, "4/3": 4100000};
+            if (prices[val]) {
+                res.innerText = prices[val].toLocaleString('uz-UZ') + " so'm";
+            } else {
+                res.innerText = "0 so'm";
+            }
+        }
+
+        // Avtomatik video ijrosi
+        const video = document.getElementById('bg-video');
+        document.body.addEventListener('click', () => {
+            if (video.muted) { video.muted = false; video.play(); }
+        }, { once: true });
+    </script>
+</body>
+</html>

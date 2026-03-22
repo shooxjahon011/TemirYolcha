@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish | TemirYo'l</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --yt: #ff0000; --neon: #00f2ff; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #000; overflow: hidden; }
+
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover;
+            pointer-events: none; filter: brightness(0.6);
+        }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45); z-index: -1; }
+
+        .login-card {
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px);
+            padding: 40px 30px; border-radius: 32px; width: 90%; max-width: 400px;
+            border: 1px solid rgba(0, 242, 255, 0.3); text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative; z-index: 1;
+        }
+
+        .brand-name { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 30px; text-shadow: 0 0 10px var(--neon); }
+        input { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95); color: #000; margin-bottom: 15px; outline: none; font-size: 16px; font-weight: 600; }
+
+        .login-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--neon); color: #000; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.3s; margin-top: 10px; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0, 242, 255, 0.5); }
+
+        .error-box { background: rgba(255, 71, 71, 0.2); color: #ff4747; padding: 14px; border-radius: 14px; margin-bottom: 20px; font-size: 13px; border: 1px solid rgba(255, 71, 71, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; }
+
+        /* YouTube Modal */
+        #yt-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: #000; padding: 45px 25px; border-radius: 40px; border: 2px solid var(--yt); text-align: center; width: 85%; max-width: 320px; }
+        .yt-icon { font-size: 70px; color: var(--yt); margin-bottom: 20px; }
+        .sub-btn { display: block; background: var(--yt); color: white; padding: 16px; border-radius: 20px; text-decoration: none; font-weight: bold; margin: 25px 0 15px; }
+        .check-btn { background: transparent; border: 1px solid #444; color: #888; width: 100%; padding: 14px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="yt-modal">
+        <div class="modal-content">
+            <div class="yt-icon"><i class="fab fa-youtube"></i></div>
+            <h2 style="margin:0; color:white;">TO'XTANG!</h2>
+            <p style="color:#bbb; font-size:14px; margin-top:10px;">Tizimdan foydalanish uchun YouTube kanalga obuna bo'lish majburiy.</p>
+            <a href="https://www.youtube.com/@gamerjaan-x6" target="_blank" class="sub-btn" onclick="didClickSub()">
+                <i class="fas fa-bell"></i> OBUNA BO'LISH
+            </a>
+            <button class="check-btn" onclick="verifySub()">TEKSHIRISH</button>
+            <p id="error-msg" style="color:#ff4444; font-size:11px; margin-top:12px; display:none;">AVVAL OBUNA TUGMASINI BOSING!</p>
+        </div>
+    </div>
+
+    <video loop playsinline muted id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="login-card">
+        <div class="brand-name">Temir Yo'l</div>
+
+        {% if error_message %}
+        <div class="error-box">
+            <i class="fas fa-exclamation-circle"></i> {{ error_message }}
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="text" name="u_name" placeholder="Login" required>
+            <input type="password" name="p_val" placeholder="Parol" required>
+            <button type="submit" class="login-btn">Kirish</button>
+        </form>
+
+        <div style="margin-top: 25px;">
+            <a href="/signup/" style="color: var(--neon); text-decoration: none; font-size: 13px; font-weight: bold;">RO'YXATDAN O'TISH</a>
+        </div>
+    </div>
+
+    <script>
+        let clickedSub = false;
+        const video = document.getElementById('bg-video');
+
+        function didClickSub() { clickedSub = true; }
+
+        function verifySub() {
+            if(clickedSub) {
+                document.getElementById('yt-modal').style.display = 'none';
+                localStorage.setItem('subscribed', 'true');
+                video.muted = false;
+                video.play();
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+
+        window.onload = () => {
+            if(localStorage.getItem('subscribed') === 'true') {
+                document.getElementById('yt-modal').style.display = 'none';
+                video.play();
+            }
+        };
+
+        // Brauzer avtomatik ovozni bloklamasligi uchun
+        document.body.addEventListener('click', () => {
+            if (video.muted) {
+                video.muted = false;
+                video.play();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>

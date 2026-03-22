@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boshliqlar Registratsiyasi</title>
+
+    <link rel="icon" href="{% static 'icons/image.png' %}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{% static 'icons/image.png' %}">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#00f2ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        :root { --neon: #00f2ff; }
+        body {
+            background: #050505;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+            background: radial-gradient(circle at top right, rgba(0, 242, 255, 0.05), transparent 40%);
+        }
+        .reg-box {
+            background: #111;
+            padding: 30px;
+            border-radius: 25px;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        h2 { color: var(--neon); text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 12px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            color: white;
+            box-sizing: border-box;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus, select:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--neon);
+            border: none;
+            border-radius: 12px;
+            font-weight: 900;
+            cursor: pointer;
+            margin-top: 20px;
+            color: black;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+        button:hover { background: #00c8d4; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 255, 0.3); }
+        button:active { transform: scale(0.98); }
+
+        label { font-size: 11px; color: #888; margin-left: 5px; display: block; margin-top: 10px; text-transform: uppercase; font-weight: bold; }
+        .section-title { font-size: 14px; color: var(--neon); margin: 20px 0 10px; font-weight: bold; border-bottom: 1px solid #222; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="reg-box">
+        <h2>Boshliq Ro'yxati</h2>
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="grid-2">
+                <input type="text" name="f_name" placeholder="Ism" required>
+                <input type="text" name="l_name" placeholder="Familiya" required>
+            </div>
+
+            <input type="text" name="u_login" placeholder="Login" required>
+            <input type="password" name="u_pass" placeholder="Parol" required>
+            <input type="tel" name="phone" placeholder="Telefon (998...)" required>
+
+            <div class="grid-2">
+                <div>
+                    <label>Otryad:</label>
+                    <select name="otryad">
+                        <option value="">Tanlanmagan</option>
+                        {% for o in otryadlar %}
+                            <option value="{{ o.id }}">{{ o.nomi }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Guruh:</label>
+                    <select name="guruh">
+                        <option value="">Tanlanmagan</option>
+                        {% for g in guruhlar %}
+                            <option value="{{ g.id }}">{{ g.nomi }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">Yashash manzili</div>
+
+            <div class="grid-2">
+                <input type="text" name="viloyat" placeholder="Viloyat">
+                <input type="text" name="tuman" placeholder="Tuman">
+            </div>
+            <input type="text" name="mahalla" placeholder="Mahalla">
+            <div class="grid-2">
+                <input type="text" name="kocha" placeholder="Ko'cha">
+                <input type="text" name="uy" placeholder="Uy raqami">
+            </div>
+
+            <button type="submit">TASDIQLASH VA SAQLASH</button>
+        </form>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register("{% static 'sw.js' %}")
+                .then(reg => console.log('SW faol'))
+                .catch(err => console.log('SW xato:', err));
+            });
+        }
+    </script>
+</body>
+</html>

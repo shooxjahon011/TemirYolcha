@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulyator | TemirYo'l</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: #000; color: white; overflow-x: hidden; }
+
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            width: auto; height: auto; z-index: -2; transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); z-index: -1;
+        }
+
+        .container {
+            max-width: 450px; margin: 40px auto; padding: 25px;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px);
+            border-radius: 30px; border: 1px solid rgba(0, 242, 255, 0.2);
+            position: relative; z-index: 1; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        h2 { text-align: center; color: #00f2ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 11px; color: #00f2ff; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
+
+        input {
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.9); color: #000; font-size: 16px; font-weight: 600; outline: none; box-sizing: border-box;
+        }
+
+        .btn-calc {
+            width: 100%; padding: 15px; border: none; border-radius: 15px;
+            background: #00f2ff; color: #000; font-weight: 900; font-size: 16px;
+            cursor: pointer; text-transform: uppercase; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-calc:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,242,255,0.4); }
+
+        .back-btn {
+            display: inline-block; text-decoration: none; color: rgba(255,255,255,0.7);
+            font-size: 14px; margin-bottom: 20px; transition: 0.3s;
+        }
+        .back-btn:hover { color: #00f2ff; }
+
+        .result-box {
+            background: rgba(0, 242, 255, 0.15); border: 1px solid #00f2ff;
+            padding: 20px; border-radius: 20px; margin-top: 20px;
+            text-align: center; backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <video loop playsinline id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <a href="/second/" class="back-btn"><i class="fas fa-arrow-left"></i> ORQAGA</a>
+        <h2>Hisob-kitob</h2>
+
+        <form method="GET">
+            <div class="form-group">
+                <label>Oklad:</label>
+                <input type="number" name="salary" value="{{ salary }}" required placeholder="Masalan: 4000000">
+            </div>
+            <div class="form-group">
+                <label>Norma soat:</label>
+                <input type="number" name="norma_soat" value="{{ norma_soat }}" required>
+            </div>
+            <div class="form-group">
+                <label>Ishlangan soat:</label>
+                <input type="number" name="ishlangan_soat" value="{{ ishlangan_soat }}" required>
+            </div>
+            <div class="form-group">
+                <label>Tungi soat:</label>
+                <input type="number" name="tungi_soat" value="{{ tungi_soat }}">
+            </div>
+            <div class="form-group">
+                <label>Bayram soati:</label>
+                <input type="number" name="bayram_soati" value="{{ bayram_soati }}">
+            </div>
+            <button type="submit" class="btn-calc">HISOBLASH</button>
+        </form>
+
+        {% if error %}
+            <p style="color:#ff4b4b; text-align:center; margin-top:20px;">⚠️ {{ error }}</p>
+        {% endif %}
+
+        {% if netto %}
+            <div class="result-box">
+                <span style="color:#ddd; font-size: 13px; text-transform: uppercase;">Qo'lga tegadigan summa:</span><br>
+                <b style="color:#00f2ff; font-size: 26px; text-shadow: 0 0 10px rgba(0,242,255,0.5);">
+                    {{ netto|floatformat:0 }} so'm
+                </b>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const video = document.getElementById('bg-video');
+        window.addEventListener('load', () => {
+            video.muted = false;
+            video.volume = 0.5;
+            video.play().catch(() => {
+                video.muted = true;
+                video.play();
+            });
+        });
+        document.body.addEventListener('click', () => {
+            if (video.muted) { video.muted = false; video.play(); }
+        }, { once: false });
+    </script>
+</body>
+</html>

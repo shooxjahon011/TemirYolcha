@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'icons/image.png' %}" type="image/x-icon">
+    <title>LIVE | Guruh Monitoringi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --neon: #00f2ff;
+            --bg: #0a0a0b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --live: #00ff88;
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: white;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .header {
+            padding: 20px; background: rgba(0,0,0,0.85);
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+            position: sticky; top: 0; z-index: 100; backdrop-filter: blur(15px);
+        }
+
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+        /* Aktiv holat paneli */
+        .status-bar {
+            background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 15px 20px; border-radius: 20px; margin-bottom: 25px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .pulse {
+            width: 10px; height: 10px; background: var(--live);
+            border-radius: 50%; box-shadow: 0 0 12px var(--live);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.1); } }
+
+        /* Ishchi kartochkasi */
+        .worker-card {
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 18px; margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.3s;
+        }
+
+        .worker-card:hover {
+            border-color: var(--neon); background: rgba(255, 255, 255, 0.08);
+        }
+
+        .worker-info { display: flex; align-items: center; gap: 15px; }
+
+        .avatar {
+            width: 55px; height: 55px; border-radius: 18px;
+            object-fit: cover; border: 2px solid rgba(0, 242, 255, 0.2);
+        }
+
+        .name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+        .time { font-size: 12px; color: #888; display: flex; align-items: center; gap: 5px; }
+
+        .track-btn {
+            background: var(--neon); color: #000; padding: 10px 15px;
+            border-radius: 12px; text-decoration: none; font-size: 12px;
+            font-weight: 800; display: flex; align-items: center; gap: 6px;
+        }
+
+        .empty-state {
+            text-align: center; padding: 80px 20px; opacity: 0.4;
+            border: 1px dashed rgba(255,255,255,0.1); border-radius: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="/bosspage/" style="color:white; font-size: 20px;"><i class="fas fa-arrow-left"></i></a>
+        <h2 style="margin:0; font-size:16px; letter-spacing: 1px;">GURUH MONITORINGI</h2>
+        <div style="width:20px;"></div>
+    </div>
+
+    <div class="container">
+        <div class="status-bar">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="pulse"></div>
+                <span style="font-size: 14px;">Aktiv ishchilar: <b>{{ count }}</b></span>
+            </div>
+            <span style="font-size: 11px; opacity: 0.5; text-transform: uppercase;">Live Stream</span>
+        </div>
+
+        {% for loc in active_locations %}
+        <div class="worker-card">
+            <div class="worker-info">
+                <img src="{% if loc.user.image %}{{ loc.user.image.url }}{% else %}{{ default_avatar }}{% endif %}" class="avatar">
+                <div>
+                    <div class="name">{{ loc.user.full_name }}</div>
+                    <div class="time">
+                        <i class="fas fa-map-marker-alt" style="color: var(--neon);"></i>
+                        Oxirgi faollik: {{ loc.last_updated|date:"H:i:s" }}
+                    </div>
+                </div>
+            </div>
+            <a href="/track-worker/{{ loc.user.id }}/" class="track-btn">
+                <i class="fas fa-location-arrow"></i> KUZATISH
+            </a>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-user-clock" style="font-size: 40px; margin-bottom: 15px; display: block;"></i>
+            Sizning guruhingizda hozircha hech kim ishda emas.
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // Har 30 soniyada sahifani yangilab turish (Live monitoring uchun)
+        setTimeout(function(){
+           window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

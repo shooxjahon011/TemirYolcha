@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vagonlar Nazorati | TemirYo'l</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f2ff;
+            --green: #00ff88;
+            --danger: #ff4747;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --bg-dark: #050505;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: var(--bg-dark);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+            padding-bottom: 120px;
+            overflow-x: hidden;
+        }
+
+        /* Video Background */
+        #bg-video {
+            position: fixed; top: 50%; left: 50%;
+            min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%);
+            object-fit: cover; filter: brightness(0.15) contrast(1.2);
+        }
+        .overlay { position: fixed; inset: 0; background: radial-gradient(circle, transparent, #000); z-index: -1; }
+
+        .header {
+            position: sticky; top: 0; z-index: 1000;
+            display: flex; align-items: center; padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border); gap: 15px;
+        }
+        .back-btn { color: #fff; text-decoration: none; font-size: 20px; }
+
+        .main-container { padding: 20px; max-width: 500px; margin: 0 auto; }
+
+        .summary-card {
+            background: var(--glass); border: 1px solid var(--accent);
+            border-radius: 25px; padding: 20px; margin-bottom: 25px;
+            text-align: center; backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+        }
+
+        .vagon-card {
+            background: rgba(255,255,255,0.03); border: 2px solid var(--glass-border);
+            border-radius: 25px; padding: 20px; margin-bottom: 15px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(8px);
+        }
+
+        .status-success { border-color: var(--green) !important; box-shadow: 0 0 20px rgba(0, 255, 136, 0.2); transform: translateY(-3px); }
+        .status-error { border-color: var(--danger) !important; box-shadow: 0 0 20px rgba(255, 71, 71, 0.2); transform: translateY(-3px); }
+
+        .vagon-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .vagon-num { font-family: 'Orbitron'; font-size: 22px; color: var(--accent); text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+
+        .action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-action {
+            padding: 14px; border-radius: 15px; border: none; font-family: 'Orbitron';
+            font-weight: 700; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 8px; transition: 0.3s; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-check { background: rgba(0, 255, 136, 0.1); color: var(--green); border: 1px solid var(--green); }
+        .btn-problem { background: rgba(255, 71, 71, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+
+        .btn-action:active { transform: scale(0.92); }
+
+        /* Modals */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+            backdrop-filter: blur(15px);
+        }
+        .modal-content {
+            background: #0a0a0a; border: 2px solid var(--accent); border-radius: 35px;
+            padding: 35px; width: 100%; max-width: 420px; text-align: center;
+            box-shadow: 0 0 40px rgba(0, 242, 255, 0.2);
+        }
+        textarea {
+            width: 100%; background: #111; border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 20px; color: #fff; height: 120px;
+            margin: 20px 0; outline: none; font-family: 'Rajdhani'; font-size: 16px;
+        }
+
+        .submit-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.9); padding: 25px;
+            border-top: 1px solid var(--glass-border); backdrop-filter: blur(20px);
+            z-index: 1500;
+        }
+        .btn-send {
+            width: 100%; max-width: 450px; margin: 0 auto; display: block;
+            background: var(--accent); color: #000; border: none;
+            padding: 20px; border-radius: 22px; font-family: 'Orbitron';
+            font-weight: 800; font-size: 16px; cursor: pointer;
+            box-shadow: 0 0 30px var(--accent); transition: 0.3s;
+        }
+        .btn-send:hover { transform: translateY(-2px); box-shadow: 0 0 40px var(--accent); }
+    </style>
+</head>
+<body>
+
+    <video autoplay loop playsinline muted id="bg-video">
+        <source src="{% static 'videos/train_motion.mp4' %}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="header">
+        <a href="/second/" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <div style="font-family: 'Orbitron'; font-weight: 700; letter-spacing: 2px;">VAGON <span style="color: var(--accent);">NAZORATI</span></div>
+    </div>
+
+    <div class="main-container">
+        <div class="summary-card">
+            <div style="font-size: 12px; color: var(--accent); letter-spacing: 4px; font-family: 'Orbitron'; margin-bottom: 5px;">POYEZD № {{ active_task.train_number }}</div>
+            <div style="font-family: 'Orbitron'; font-size: 26px; font-weight: 700;">JAMI: {{ wagons|length }} TA VAGON</div>
+        </div>
+
+        <form id="vagonForm" action="{% url 'save_vagon_status' %}" method="POST">
+            {% csrf_token %}
+            <div class="vagon-list">
+                {% for wagon in wagons %}
+                <div class="vagon-card" id="card-{{ wagon.id }}">
+                    <div class="vagon-header">
+                        <div>
+                            <div class="vagon-num">№ {{ wagon.vagon_number }}</div>
+                            <div style="font-size: 11px; color: #666; font-family: 'Orbitron';">ID: {{ wagon.id }}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="font-size: 13px; color: var(--accent); font-weight: 700;">{{ wagon.vagon_type }}</span>
+                        </div>
+                    </div>
+
+                    <div class="action-group">
+                        <button type="button" class="btn-action btn-check" id="btn-check-{{ wagon.id }}" onclick="markSuccess('{{ wagon.id }}')">
+                            <i class="fas fa-check-circle"></i> TEKSHIRDIM
+                        </button>
+                        <button type="button" class="btn-action btn-problem" id="btn-prob-{{ wagon.id }}" onclick="openProblemModal('{{ wagon.id }}')">
+                            <i class="fas fa-exclamation-triangle"></i> MUAMMO
+                        </button>
+                    </div>
+
+                    <input type="hidden" name="vagon_{{ wagon.id }}_status" id="status-{{ wagon.id }}" value="pending">
+                    <input type="hidden" name="vagon_{{ wagon.id }}_comment" id="comment-{{ wagon.id }}" value="">
+                </div>
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+
+    <div class="submit-bar">
+        <button type="button" class="btn-send" onclick="askConfirmation()">HISOBOTNI YUBORISH</button>
+    </div>
+
+    <div class="modal" id="problemModal">
+        <div class="modal-content" style="border-color: var(--danger);">
+            <h3 style="font-family: 'Orbitron'; color: var(--danger); letter-spacing: 2px;">MUAMMO TAVSIFI</h3>
+            <textarea id="modalTextarea" placeholder="Vagondagi texnik nosozlikni yozing..."></textarea>
+            <div class="action-group">
+                <button type="button" class="btn-action" style="background: #1a1a1a; color: #fff;" onclick="closeModal('problemModal')">BEKOR QILISH</button>
+                <button type="button" class="btn-action" style="background: var(--danger); color: #fff;" onclick="saveProblem()">SAQLASH</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <i class="fas fa-shield-alt" style="font-size: 50px; color: var(--accent); margin-bottom: 20px;"></i>
+            <h3 style="font-family: 'Orbitron'; letter-spacing: 2px;">TASDIQLASH</h3>
+            <p style="margin: 20px 0; color: #aaa; font-size: 18px;">Hamma vagonlar tekshirildimi? Hisobotni yuborasizmi?</p>
+            <div class="action-group">
+                <button type="button" class="btn-action" style="background: #1a1a1a; color: #fff;" onclick="closeModal('confirmModal')">YO'Q</button>
+                <button type="button" class="btn-action" style="background: var(--green); color: #000;" onclick="finalSubmit()">HA, TUGATDIM</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentWagonId = null;
+
+        function markSuccess(id) {
+            const card = document.getElementById('card-' + id);
+            card.className = 'vagon-card status-success';
+            document.getElementById('status-' + id).value = 'ok';
+            document.getElementById('comment-' + id).value = 'Hammasi soz';
+        }
+
+        function openProblemModal(id) {
+            currentWagonId = id;
+            document.getElementById('problemModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function saveProblem() {
+            const text = document.getElementById('modalTextarea').value;
+            if(!text.trim()) return alert("Iltimos, izoh yozing!");
+
+            const card = document.getElementById('card-' + currentWagonId);
+            card.className = 'vagon-card status-error';
+            document.getElementById('status-' + currentWagonId).value = 'problem';
+            document.getElementById('comment-' + currentWagonId).value = text;
+            closeModal('problemModal');
+            document.getElementById('modalTextarea').value = "";
+        }
+
+        function askConfirmation() {
+            // Kamida bitta vagon tanlanganini tekshirish uchun mantiq qo'shish mumkin
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function finalSubmit() {
+            // Formani yuborish - bu Boss panelida ko'rinishi uchun Django view ga boradi
+            document.getElementById('vagonForm').submit();
+        }
+    </script>
+</body>
+</html>

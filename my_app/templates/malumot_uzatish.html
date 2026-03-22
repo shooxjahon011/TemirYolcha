@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ma'lumot Uzatish | {{ display_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --accent-cyan: #00f2ff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-dark);
+            background-image: url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: white; font-family: 'Rajdhani', sans-serif; min-height: 100vh;
+        }
+
+        .overlay-main { position: fixed; inset: 0; background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%); z-index: -1; }
+        .container { padding: 50px 20px; max-width: 900px; margin: 0 auto; }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif; font-size: 28px; text-align: center;
+            margin-bottom: 45px; letter-spacing: 2px;
+            background: linear-gradient(to bottom, #fff, var(--accent-cyan));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .worker-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); padding: 25px; border-radius: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; transition: 0.3s; cursor: pointer;
+        }
+        .worker-card:hover { border-color: var(--accent-cyan); transform: scale(1.02); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); z-index: 1000; }
+        .modal-content {
+            background: #0d0d0d; border: 1px solid var(--accent-cyan);
+            width: 90%; max-width: 450px; margin: 100px auto; padding: 35px;
+            border-radius: 25px; box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+        }
+
+        select, button { width: 100%; padding: 14px; margin-top: 15px; border-radius: 10px; font-family: 'Rajdhani'; }
+        select { background: #1a1a1a; color: white; border: 1px solid #333; outline: none; }
+        .btn-submit { background: var(--accent-cyan); color: #000; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase; }
+        .btn-back { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 50px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="overlay-main"></div>
+
+    <div class="container">
+        <a href="/bosspage/" class="btn-back"><i class="fas fa-chevron-left"></i> ORQAGA</a>
+        <h1>POYEZD MONITORINGI ZANJIRI</h1>
+
+        <div class="worker-list">
+            {% for train in trains %}
+            <div class="worker-card" onclick="openTransferModal('{{ train.id }}', '{{ train.assigned_worker.full_name }}', '{{ train.train_number }}')">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <i class="fas fa-train-subway" style="font-size: 25px; color: var(--accent-cyan);"></i>
+                    <div>
+                        <strong style="font-size: 20px; display: block;">{{ train.assigned_worker.full_name }}</strong>
+                        <span style="font-size: 12px; color: var(--accent-cyan);">№ {{ train.train_number }}</span>
+                    </div>
+                </div>
+                <i class="fas fa-paper-plane" style="opacity: 0.5;"></i>
+            </div>
+            {% empty %}
+            <p style="text-align: center; opacity: 0.5;">Hozircha biriktirilgan poyezdlar yo'q.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="transferModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--accent-cyan); font-family: 'Orbitron'; font-size: 18px; text-align: center;">YO'NALTIRISH</h2>
+            <p id="transferInfo" style="text-align: center; margin: 20px 0; font-size: 14px; color: #ccc;"></p>
+
+            <form id="transferForm" method="POST">
+                {% csrf_token %}
+                <label style="font-size: 11px; color: var(--accent-cyan);">OTRYAD:</label>
+                <select name="otryad" id="otryad_select" onchange="loadGuruhlar(this.value)" required>
+                    <option value="">-- Tanlang --</option>
+                    {% for o in otryadlar %}
+                    <option value="{{ o.id }}">{{ o.nomi }}</option>
+                    {% endfor %}
+                </select>
+
+                <label style="font-size: 11px; color: var(--accent-cyan); display: block; margin-top: 15px;">GURUH:</label>
+                <select name="guruh" id="guruh_select" required disabled>
+                    <option value="">Otryadni tanlang</option>
+                </select>
+
+                <button type="submit" class="btn-submit">TASDIQLASH VA YUBORISH</button>
+                <button type="button" onclick="closeModal()" style="background: transparent; border: none; color: #555; margin-top: 10px; cursor: pointer;">BEKOR QILISH</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const MY_GROUP_ID = "{{ user_guruh_id }}";
+
+        function openTransferModal(trainId, name, trainNum) {
+            document.getElementById('transferForm').action = "/transfer-train-api/" + trainId + "/";
+            document.getElementById('transferInfo').innerHTML = `Poyezd: <strong>№${trainNum}</strong><br>Mas'ul: ${name}`;
+            document.getElementById('transferModal').style.display = 'block';
+        }
+
+        function closeModal() { document.getElementById('transferModal').style.display = 'none'; }
+
+        function loadGuruhlar(otryadId) {
+            const select = document.getElementById('guruh_select');
+            if(!otryadId) { select.disabled = true; return; }
+
+            fetch(`/ajax/get-guruhlar/?otryad_id=${otryadId}`)
+                .then(res => res.json())
+                .then(data => {
+                    select.innerHTML = '<option value="">-- Guruhni tanlang --</option>';
+                    data.forEach(g => {
+                        // O'z guruhini ro'yxatdan chiqarish
+                        if (String(g.id) !== String(MY_GROUP_ID)) {
+                            select.innerHTML += `<option value="${g.id}">${g.nomi}</option>`;
+                        }
+                    });
+                    select.disabled = (select.options.length <= 1);
+                });
+        }
+    </script>
+</body>
+</html>

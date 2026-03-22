@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuzatuv: {{ display_name }}</title>
+
+    <script src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root { --accent: #00f2ff; --bg: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
+        #map { height: 100vh; width: 100vw; filter: invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%); } /* Dark Mode xarita */
+
+        .back-btn {
+            position: absolute; top: 25px; left: 25px; z-index: 1000;
+            background: rgba(0,0,0,0.8); color: white; width: 50px; height: 50px;
+            border-radius: 18px; display: flex; align-items: center; justify-content: center;
+            text-decoration: none; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); transition: 0.3s;
+        }
+        .back-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
+
+        .info-panel {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(0, 0, 0, 0.8); color: white;
+            padding: 15px 30px; border-radius: 50px; display: flex; align-items: center;
+            gap: 20px; backdrop-filter: blur(15px); border: 1px solid rgba(0, 242, 255, 0.4);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); min-width: 300px;
+        }
+
+        .status-dot {
+            width: 12px; height: 12px; background: #00ff88; border-radius: 50%;
+            box-shadow: 0 0 15px #00ff88; animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #update-time { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 800; }
+
+        /* Xarita ichidagi Yandex logolarini tozalash (ixtiyoriy) */
+        .ymaps-2-1-79-copyright, .ymaps-2-1-79-map-copyrights-promo { display: none !important; }
+    </style>
+</head>
+<body>
+    <a href="/active-workers/" class="back-btn"><i class="fas fa-chevron-left"></i></a>
+
+    <div id="map"></div>
+
+    <div class="info-panel">
+        <div class="status-dot"></div>
+        <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">{{ display_name }}</span>
+            <span style="font-size: 11px; opacity: 0.6;">Jonli monitoring yoqilgan</span>
+        </div>
+        <div style="height: 25px; width: 1px; background: rgba(255,255,255,0.2);"></div>
+        <div id="update-time">--:--:--</div>
+    </div>
+
+    <script type="text/javascript">
+        ymaps.ready(function () {
+            var myMap = new ymaps.Map("map", {
+                center: [{{ start_lat }}, {{ start_lng }}],
+                zoom: 17,
+                controls: [] // Toza ko'rinish uchun boshqaruvchilarni olib tashladik
+            });
+
+            var workerMarker = new ymaps.Placemark([{{ start_lat }}, {{ start_lng }}], {
+                balloonContent: 'Xodim: {{ display_name }}',
+                iconContent: '{{ display_name }}'
+            }, {
+                preset: 'islands#blueStretchyIcon',
+                balloonPanelMaxMapArea: 0
+            });
+
+            myMap.geoObjects.add(workerMarker);
+
+            function updateLocation() {
+                fetch('/get-location/{{ worker.id }}/')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.lat && data.lng) {
+                            var newCoords = [data.lat, data.lng];
+
+                            // Markerni silliq yurgizish (animation)
+                            workerMarker.geometry.setCoordinates(newCoords);
+
+                            // Xaritani markazlashtirish
+                            myMap.panTo(newCoords, {
+                                flying: true,
+                                duration: 2000
+                            });
+
+                            var now = new Date();
+                            var timeStr = now.toLocaleTimeString('uz-UZ', { hour12: false });
+                            document.getElementById('update-time').innerText = timeStr;
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Xatolik:", err);
+                        document.getElementById('update-time').innerText = "XATO";
+                    });
+            }
+
+            // Har 5 soniyada yangilash
+            setInterval(updateLocation, 5000);
+            updateLocation();
+        });
+    </script>
+</body>
+</html>

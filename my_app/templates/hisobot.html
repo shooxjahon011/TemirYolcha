@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisobot | {{ current_user.login }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 20px; background: #000; color: white;
+            font-family: 'Segoe UI', sans-serif; min-height: 100vh; overflow-x: hidden;
+        }
+
+        #bg-video {
+            position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%); object-fit: cover;
+        }
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65); z-index: -1;
+        }
+
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 25px; position: relative; z-index: 10; padding: 10px;
+        }
+        .back-btn {
+            background: rgba(0, 242, 255, 0.1); width: 45px; height: 45px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 15px; color: #00f2ff; text-decoration: none;
+            border: 1px solid rgba(0,242,255,0.4); transition: 0.3s;
+        }
+        .back-btn:hover { background: #00f2ff; color: #000; transform: scale(1.05); }
+
+        .table-container {
+            overflow-x: auto; background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(15px); border-radius: 25px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th {
+            background: rgba(0, 242, 255, 0.15); color: #00f2ff; padding: 18px 10px;
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 2px solid rgba(0,242,255,0.4);
+        }
+        td { padding: 15px 10px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 14px; }
+
+        .date-col { color: #00f2ff; font-weight: bold; }
+        .total-row {
+            background: rgba(0, 242, 255, 0.25); font-weight: 900;
+            color: #fff; border-top: 2px solid #00f2ff;
+        }
+
+        /* Skrollbar */
+        .table-container::-webkit-scrollbar { height: 6px; }
+        .table-container::-webkit-scrollbar-thumb { background: #00f2ff; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <video loop playsinline id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="header">
+        <a href="/second/" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <h2 style="margin:0; font-weight:800; letter-spacing:1px; text-transform:uppercase;">
+            Ish <span style="color:#00f2ff;">Hisoboti</span>
+        </h2>
+        <div style="width:45px;"></div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sana</th>
+                    <th>Norma</th>
+                    <th>Oklad</th>
+                    <th>Ishlangan</th>
+                    <th>Tungi</th>
+                    <th>Bayram</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in jadval %}
+                <tr>
+                    <td class="date-col">{{ row.date|date:"d.m.Y" }}</td>
+                    <td>{{ row.norma_soati }}</td>
+                    <td>{{ row.oklad|floatformat:"0" }}</td>
+                    <td>{{ row.ishlagan_soati }}</td>
+                    <td>{{ row.tungi_soati }}</td>
+                    <td>{{ row.bayram_soati }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="padding:80px; font-style:italic; color:rgba(255,255,255,0.4);">
+                        Ma'lumotlar hozircha mavjud emas
+                    </td>
+                </tr>
+                {% endfor %}
+
+                {% if jadval %}
+                <tr class="total-row">
+                    <td style="color:#00f2ff; text-transform:uppercase; text-align: left; padding-left: 20px;">Jami:</td>
+                    <td>{{ last_entry.norma_soati }}</td>
+                    <td>{{ last_entry.oklad|floatformat:"0" }}</td>
+                    <td>{{ jami.t_ish|default:0 }}</td>
+                    <td>{{ jami.t_tungi|default:0 }}</td>
+                    <td>{{ jami.t_bayram|default:0 }}</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const video = document.getElementById('bg-video');
+        window.addEventListener('load', () => {
+            video.muted = false;
+            video.volume = 0.5;
+            video.play().catch(() => {
+                video.muted = true;
+                video.play();
+            });
+        });
+
+        document.body.addEventListener('click', () => {
+            if (video.muted) { video.muted = false; video.play(); }
+        }, { once: false });
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To'lov Hisoblagich</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
+        #bg-video { position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%; z-index: -2; transform: translate(-50%, -50%); object-fit: cover; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); z-index: -1; }
+        .container { position: relative; z-index: 2; width: 90%; max-width: 420px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); padding: 30px; border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.2); color: white; box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; }
+        h2 { text-align: center; margin-bottom: 25px; color: #00f2ff; }
+        .form-group { margin-bottom: 15px; }
+        label { font-size: 11px; text-transform: uppercase; margin-bottom: 5px; display: block; color: #00f2ff; font-weight: bold; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: none; background: rgba(255,255,255,0.95); color: #000; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 25px; }
+        .btn-calculate { flex: 2; padding: 14px; border: none; border-radius: 12px; background: #00f2ff; color: #000; font-weight: bold; cursor: pointer; }
+        .btn-back { flex: 1; padding: 14px; border: 1px solid white; border-radius: 12px; color: white; text-decoration: none; text-align: center; font-size: 13px; }
+
+        /* Natija kartasi stili */
+        .result-box { margin-top: 25px; padding: 20px; border-radius: 15px; background: white; color: #333; }
+        .error-box { background: rgba(255, 0, 0, 0.2); color: #ffcccc; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px; border: 1px solid red; }
+    </style>
+</head>
+<body>
+    <video loop playsinline id="bg-video">
+        <source src="{{ video_url }}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <h2>💰 Hisoblagich</h2>
+        <form method="GET">
+            <div class="form-group">
+                <label><i class="fas fa-calendar-alt"></i> Boshlanish:</label>
+                <input type="date" name="start_date" value="{{ start_date_str }}" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-calendar-check"></i> Tugash:</label>
+                <input type="date" name="end_date" value="{{ end_date_str }}" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-money-bill-wave"></i> Oklad (so'm):</label>
+                <input type="number" name="oklad" value="{{ user_okladi_str }}" placeholder="4000000" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-star"></i> Korsatkich (ball):</label>
+                <input type="number" name="korsatkich" value="{{ korsatkich_str }}" placeholder="Ballni kiriting" required>
+            </div>
+            <div class="btn-group">
+                <a href="/second/" class="btn-back">ORQAGA</a>
+                <button type="submit" class="btn-calculate">HISOBLASH</button>
+            </div>
+        </form>
+
+        {% if error %}
+            <div class="error-box">❌ {{ error }}</div>
+        {% endif %}
+
+        {% if result %}
+            <div class="result-box">
+                <h3 style="color: #28a745; text-align: center; margin-top: 0;">📊 Hisobot</h3>
+                <p><b>Oklad:</b> {{ result.oklad|floatformat:0 }} × {{ result.foiz }}% = <b>{{ result.asos|floatformat:0 }} so'm</b></p>
+                <p><b>Ish kunlari:</b> {{ result.kunlar }} kun × {{ result.kunlik_stavka|floatformat:0 }} = <b>{{ result.kunlik_haq|floatformat:0 }} so'm</b></p>
+                <div style="text-align: center; background: #f8f9fa; padding: 10px; border-radius: 10px; border: 1px dashed #28a745;">
+                    <span style="font-size: 12px;">JAMI TO'LOV:</span><br>
+                    <span style="color: #28a745; font-size: 24px; font-weight: 800;">{{ result.jami|floatformat:0 }} so'm</span>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const video = document.getElementById('bg-video');
+        document.body.addEventListener('click', () => {
+            if (video.muted) { video.muted = false; video.volume = 0.5; }
+        }, { once: true });
+    </script>
+</body>
+</html>

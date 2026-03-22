@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bosh Menyu | TemirYo'l</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --accent: #00f2ff;
+            --green: #00ff88;
+            --danger: #ff4747;
+            --glass: rgba(255, 255, 255, 0.08);
+            --bg-dark: #050505;
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-dark); color: #fff; font-family: 'Rajdhani', sans-serif; min-height: 100vh; padding-bottom: 110px; overflow-x: hidden; }
+
+        /* Orqa fon videosi */
+        #bg-video { position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%; z-index: -2; transform: translate(-50%, -50%); object-fit: cover; filter: brightness(0.2) contrast(1.2); }
+        .overlay { position: fixed; inset: 0; background: radial-gradient(circle, transparent, rgba(0,0,0,0.8)); z-index: -1; }
+
+        /* Header */
+        .header { position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); border-bottom: 1px solid var(--glass-border); }
+        .brand { font-family: 'Orbitron'; color: var(--accent); font-weight: 700; text-shadow: 0 0 10px var(--accent); }
+
+        .main-container { padding: 20px; max-width: 500px; margin: 0 auto; }
+
+        /* Active Train Card (Rasmda belgilangan qism) */
+        .active-work-card {
+            background: linear-gradient(90deg, rgba(0,242,255,0.1), transparent);
+            border: 1px solid var(--accent); border-radius: 25px; padding: 20px;
+            margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 0 20px rgba(0,242,255,0.15); border-left: 5px solid var(--accent);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .status-box { background: var(--glass); border-radius: 30px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--glass-border); backdrop-filter: blur(10px); text-align: center; }
+
+        /* Asosiy Tugma */
+        .btn-main { width: 100%; padding: 18px; border-radius: 20px; border: none; font-family: 'Orbitron'; font-weight: 700; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .btn-idle { background: var(--green); color: #000; box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
+        .btn-working { background: rgba(255, 71, 71, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+
+        /* Menu Grid */
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .menu-item { background: var(--glass); border-radius: 25px; padding: 25px 15px; text-align: center; text-decoration: none; color: #fff; border: 1px solid var(--glass-border); transition: 0.3s; }
+        .menu-item i { font-size: 28px; color: var(--accent); margin-bottom: 10px; display: block; transition: 0.3s; }
+        .menu-item:active { transform: scale(0.9); }
+
+        /* Pastki Navigatsiya */
+        .nav-bar { position: fixed; bottom: 15px; left: 15px; right: 15px; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); display: flex; justify-content: space-around; padding: 15px; border-radius: 25px; border: 1px solid var(--glass-border); z-index: 1000; }
+
+        /* SweetAlert Cyberpunk Style */
+        .swal2-popup {
+            background: rgba(10, 10, 10, 0.98) !important;
+            border: 2px solid var(--accent) !important;
+            border-radius: 30px !important;
+            color: #fff !important;
+            font-family: 'Rajdhani', sans-serif !important;
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+    <video autoplay loop playsinline muted id="bg-video">
+        <source src="{% static 'uzb.mp4' %}" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="header">
+        <div class="brand">TEMIR<span style="color:#fff">YO'L</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 14px; font-weight: 600;">{{ display_name }}</span>
+            <img src="{{ avatar_url }}" style="width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover;">
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        {% if tasks %}
+            {% with task=tasks.0 %}
+            <script>
+                window.addEventListener('DOMContentLoaded', (event) => {
+                    Swal.fire({
+                        title: 'YANGI TOPSHIRIQ!',
+                        html: 'Sizga yangi poyezd biriktirildi: <br><b style="color: #00f2ff; font-size: 30px; font-family: Orbitron;">№ {{ task.train_number }}</b>',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonColor: '#00ff88',
+                        cancelButtonColor: '#ff4747',
+                        confirmButtonText: '<i class="fas fa-check"></i> QABUL QILISH',
+                        cancelButtonText: '<i class="fas fa-times"></i> RAD ETISH',
+                        allowOutsideClick: false,
+                        background: '#0a0a0a'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                title: 'Tasdiqlanmoqda...',
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+                            window.location.href = "/task-respond/{{ task.id }}/accept/";
+                        } else if (result.dismiss === Swal.DismissReason.cancel) {
+                            window.location.href = "/task-respond/{{ task.id }}/reject/";
+                        }
+                    });
+                });
+            </script>
+            {% endwith %}
+        {% endif %}
+
+        {% if active_task %}
+        <div class="active-work-card">
+            <div>
+                <p style="color: var(--accent); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">HOZIR ISHLANMOQDA:</p>
+                <h3 style="font-family: 'Orbitron'; font-size: 24px;">№ {{ active_task.train_number }}</h3>
+            </div>
+            <a href="javascript:void(0)" onclick="animateMenu('/Poezdlar/', 'Vagonlar yuklanmoqda...')" style="background: rgba(0,242,255,0.1); border: 1px solid var(--accent); color: #fff; padding: 10px 15px; border-radius: 12px; text-decoration: none; font-family: 'Orbitron'; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-list-check"></i> Vagonlar
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="status-box">
+            <button onclick="handleWorkToggle()" class="btn-main {{ btn_class }}">
+                <i class="fas fa-power-off"></i> <span>{{ btn_text }}</span>
+            </button>
+        </div>
+
+        <div class="menu-grid">
+            <a href="javascript:void(0)" onclick="animateMenu('/okladmenu/', 'Maosh hisoblanmoqda...')" class="menu-item"><i class="fas fa-wallet"></i><span>Maosh</span></a>
+            <a href="javascript:void(0)" onclick="animateMenu('/tatil/', 'Taqvim ochilmoqda...')" class="menu-item"><i class="fas fa-calendar-alt"></i><span>Ta'til</span></a>
+            <a href="javascript:void(0)" onclick="animateMenu('/hisobot/', 'Arxiv tekshirilmoqda...')" class="menu-item"><i class="fas fa-file-invoice"></i><span>Hisobot</span></a>
+            <a href="javascript:void(0)" onclick="animateMenu('/Baxtsizhodisalar/', 'Xavfsizlik protokoli...')" class="menu-item"><i class="fas fa-shield-alt"></i><span>Xavfsizlik</span></a>
+            <a href="javascript:void(0)" onclick="animateMenu('/profile/', 'Profil yuklanmoqda...')" class="menu-item"><i class="fas fa-user-circle"></i><span>Profil</span></a>
+            <a href="https://t.me/STAREVOID" target="_blank" class="menu-item"><i class="fas fa-headset"></i><span>Yordam</span></a>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <a href="/second/" style="color: var(--accent); text-align: center; text-decoration: none;"><i class="fas fa-home"></i><br><span style="font-size: 10px;">Asosiy</span></a>
+        <a href="/profile/" style="color: #555; text-align: center; text-decoration: none;"><i class="fas fa-user"></i><br><span style="font-size: 10px;">Profil</span></a>
+        <a href="javascript:void(0)" onclick="confirmLogout()" style="color: var(--danger); text-align: center; text-decoration: none;"><i class="fas fa-sign-out-alt"></i><br><span style="font-size: 10px;">Chiqish</span></a>
+    </div>
+
+    <script>
+        // 1. Ishni boshlash/tugatish
+        async function handleWorkToggle() {
+            const isWorking = "{{ is_working }}" === "True";
+            const action = isWorking ? 'stop' : 'start';
+
+            Swal.fire({
+                title: isWorking ? 'Ish yakunlanmoqda...' : 'Ish boshlanmoqda...',
+                didOpen: () => { Swal.showLoading(); },
+                allowOutsideClick: false
+            });
+
+            try {
+                const res = await fetch('/toggle-work/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: new URLSearchParams({ 'action': action })
+                });
+                if(res.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: isWorking ? 'Dam olish vaqti!' : 'Siz ishga keldingiz!',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => { location.reload(); });
+                }
+            } catch (err) { Swal.fire('Xato!', 'Tizimda xatolik.', 'error'); }
+        }
+
+        // 2. Menyu animatsiyasi
+        function animateMenu(url, loadingText) {
+            Swal.fire({
+                title: loadingText,
+                timer: 800,
+                timerProgressBar: true,
+                didOpen: () => { Swal.showLoading(); },
+                willClose: () => { window.location.href = url; }
+            });
+        }
+
+        // 3. Chiqish tasdiqlash
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Tizimdan chiqish?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#00f2ff',
+                cancelButtonColor: '#ff4747',
+                confirmButtonText: 'Ha',
+                cancelButtonText: 'Yo\'q'
+            }).then((result) => { if (result.isConfirmed) window.location.href = '/logout/'; });
+        }
+
+        // 4. Fondagi avtomatik tekshiruv (Har 7 soniyada)
+        setInterval(async () => {
+            try {
+                const res = await fetch(window.location.href);
+                const text = await res.text();
+                // Agar yangi poyezd bo'lsa va ekranda hozir oyna chiqmagan bo'lsa
+                if (text.includes('YANGI TOPSHIRIQ!') && !Swal.isVisible()) {
+                    location.reload();
+                }
+            } catch (e) { console.log("Polling error"); }
+        }, 7000);
+    </script>
+</body>
+</html>
